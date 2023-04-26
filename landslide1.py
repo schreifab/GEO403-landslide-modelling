@@ -245,9 +245,8 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         
         roads_utm = processing.run("native:reprojectlayer", {'INPUT':parameters["roads"],'TARGET_CRS':QgsCoordinateReferenceSystem('EPSG:32648'),'OPERATION':'+proj=pipeline +step +proj=unitconvert +xy_in=deg +xy_out=rad +step +proj=utm +zone=48 +ellps=WGS84','OUTPUT':'TEMPORARY_OUTPUT'})
         roads_raster = processing.run("gdal:rasterize", {'INPUT':roads_utm['OUTPUT'],'FIELD':'','BURN':1,'USE_Z':False,'UNITS':1,'WIDTH':30,'HEIGHT':30,'EXTENT':None,'NODATA':0,'OPTIONS':'','DATA_TYPE':5,'INIT':None,'INVERT':False,'EXTRA':'','OUTPUT':'TEMPORARY_OUTPUT'})
-        roads_distance = processing.run("gdal:proximity", {'INPUT':roads_raster['OUTPUT'],'BAND':1,'VALUES':'','UNITS':1,'MAX_DISTANCE':0,'REPLACE':0,'NODATA':0,'OPTIONS':'','EXTRA':'','DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
-        roads_distance = processing.run("gdal:proximity", {'INPUT':roads_raster['OUTPUT'],'BAND':1,'VALUES':'','UNITS':1,'MAX_DISTANCE':0,'REPLACE':0,'NODATA':0,'OPTIONS':'','EXTRA':'','DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
-        
+        roads_distance = processing.run("gdal:proximity", {'INPUT':roads_raster['OUTPUT'],'BAND':1,'VALUES':'','UNITS':0,'MAX_DISTANCE':0,'REPLACE':0,'NODATA':0,'OPTIONS':'','EXTRA':'','DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
+
         dgm = parameters['dgm']
         slopeaspectcurvature = processing.run("saga:slopeaspectcurvature", {'ELEVATION':dgm,'SLOPE':'TEMPORARY_OUTPUT','ASPECT':'TEMPORARY_OUTPUT','C_GENE':'TEMPORARY_OUTPUT','C_PROF':'TEMPORARY_OUTPUT','C_PLAN':'TEMPORARY_OUTPUT','C_TANG':'TEMPORARY_OUTPUT','C_LONG':'TEMPORARY_OUTPUT','C_CROS':'TEMPORARY_OUTPUT','C_MINI':'TEMPORARY_OUTPUT','C_MAXI':'TEMPORARY_OUTPUT','C_TOTA':'TEMPORARY_OUTPUT','C_ROTO':'TEMPORARY_OUTPUT','METHOD':6,'UNIT_SLOPE':0,'UNIT_ASPECT':0})
         twi = processing.run("grass7:r.topidx", {'input':dgm,'output':'TEMPORARY_OUTPUT','GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
@@ -274,9 +273,10 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         
         i = 0
         for raster in viewshed_raster_list:
-            processing.run("native:rasterlayerzonalstats", {'INPUT':parameters['landslides'],'BAND':1,'ZONES':raster,'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE': raster_names[i]+'zonal.csv'})
+            processing.run("native:rasterlayerzonalstats", {'INPUT':parameters['landslides'],'BAND':1,'ZONES':raster,'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE': raster_names[i]+'_zonal.csv'})
             i += 1
-
+        
+        
         
         
         
