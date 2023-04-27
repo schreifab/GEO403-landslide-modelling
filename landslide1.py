@@ -32,6 +32,8 @@ from qgis.core import (QgsProcessing,
 from qgis import processing
 from qgis.analysis import (QgsRasterCalculatorEntry, QgsRasterCalculator)
 import os
+import csv
+import numpy as np
 #import QgsProject
 
 class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
@@ -248,7 +250,7 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         roads_distance = processing.run("gdal:proximity", {'INPUT':roads_raster['OUTPUT'],'BAND':1,'VALUES':'','UNITS':0,'MAX_DISTANCE':0,'REPLACE':0,'NODATA':0,'OPTIONS':'','EXTRA':'','DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
 
         dgm = parameters['dgm']
-        slopeaspectcurvature = processing.run("saga:slopeaspectcurvature", {'ELEVATION':dgm,'SLOPE':'TEMPORARY_OUTPUT','ASPECT':'TEMPORARY_OUTPUT','C_GENE':'TEMPORARY_OUTPUT','C_PROF':'TEMPORARY_OUTPUT','C_PLAN':'TEMPORARY_OUTPUT','C_TANG':'TEMPORARY_OUTPUT','C_LONG':'TEMPORARY_OUTPUT','C_CROS':'TEMPORARY_OUTPUT','C_MINI':'TEMPORARY_OUTPUT','C_MAXI':'TEMPORARY_OUTPUT','C_TOTA':'TEMPORARY_OUTPUT','C_ROTO':'TEMPORARY_OUTPUT','METHOD':6,'UNIT_SLOPE':0,'UNIT_ASPECT':0})
+        slopeaspectcurvature = processing.run("saga:slopeaspectcurvature", {'ELEVATION':dgm,'SLOPE':'TEMPORARY_OUTPUT','ASPECT':'TEMPORARY_OUTPUT','C_GENE':'TEMPORARY_OUTPUT','C_PROF':'TEMPORARY_OUTPUT','C_PLAN':'TEMPORARY_OUTPUT','C_TANG':'TEMPORARY_OUTPUT','C_LONG':'TEMPORARY_OUTPUT','C_CROS':'TEMPORARY_OUTPUT','C_MINI':'TEMPORARY_OUTPUT','C_MAXI':'TEMPORARY_OUTPUT','C_TOTA':'TEMPORARY_OUTPUT','C_ROTO':'TEMPORARY_OUTPUT','METHOD':6,'UNIT_SLOPE':1,'UNIT_ASPECT':1})
         twi = processing.run("grass7:r.topidx", {'input':dgm,'output':'TEMPORARY_OUTPUT','GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
 
         
@@ -271,21 +273,22 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
             viewshed_raster_list.append(clip_result['OUTPUT'])
             
         
+        
+        processing.run("native:rasterlayerzonalstats", {'INPUT':parameters['landslides'],'BAND':1,'ZONES':parameters['landslides'],'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE':'landslides_pixel.csv'})
+        pixel_landslide_count = zonal_statistics_as_dic_from_csv('landslides_pixel.csv').get('1')
+        
         i = 0
         for raster in viewshed_raster_list:
             processing.run("native:rasterlayerzonalstats", {'INPUT':parameters['landslides'],'BAND':1,'ZONES':raster,'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE': raster_names[i]+'_zonal.csv'})
+            processing.run("native:rasterlayerzonalstats", {'INPUT':raster,'BAND':1,'ZONES':raster,'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE': raster_names[i]+'_class_pixel.csv'})
+            pixel_zonal = zonal_statistics_as_dic_from_csv(raster_names[i]+'_zonal.csv')
+            class_values = zonal_statistics_as_dic_from_csv(raster_names[i]+'_class_pixel.csv')
+            reclass_table = create_statistical_index_list(pixel_zonal,class_values,pixel_landslide_count)
+            print(reclass_table)
             i += 1
+            
         
-        
-        
-        
-        
-        
-        
-       
-
-
-        
+         
         
         #result_slope = processing.run("gdal:slope",{'BAND': 1, 'INPUT': parameters["dgm"],'SCALE':1,'OUTPUT': 'TEMPORARY_OUTPUT'},
             #context=context, feedback=feedback, is_child_algorithm=True)
@@ -299,3 +302,35 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         #return {self.OUTPUT: result_slope}
         
         return{}
+        
+        
+
+def zonal_statistics_as_dic_from_csv(file):
+    with open(file) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        i = 0
+        dic = {}
+        for row in csv_reader:
+            if i != 0:
+                dic.update({str(int(float(row[0]))): float(row[3])})
+            i += 1
+        return dic
+        
+def create_statistical_index_list(pixel_landslides_per_class,pixel_per_class,pixel_landslide_count):
+    list = []
+    for key in pixel_per_class:
+        if key in pixel_landslides_per_class:
+            list.append(key)
+            list.append(key)
+            si = np.log((pixel_landslides_per_class.get(key)/pixel_per_class.get(key))/(pixel_landslide_count/sum(pixel_per_class.values())))
+            list.append(str(si))
+        else: 
+            list.append(key)
+            list.append(key)
+            si = np.log((0.001/pixel_per_class.get(key))/(pixel_landslide_count/sum(pixel_per_class.values())))
+            list.append(str(si))
+    return list
+    
+    
+
+    
