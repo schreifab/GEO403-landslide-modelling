@@ -169,13 +169,13 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
             )
         )
         
-        # self.addParameter(
-            # QgsProcessingParameterRasterLayer(
-                # "waterbodies",
-                # self.tr('waterbodies'),
-                # None
-            # )
-        # )
+        self.addParameter(
+            QgsProcessingParameterRasterLayer(
+                "waterbodies",
+                self.tr('waterbodies'),
+                None
+            )
+        )
         
         
         self.addParameter(
@@ -251,27 +251,30 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
 
         dgm = parameters['dgm']
         slopeaspectcurvature = processing.run("saga:slopeaspectcurvature", {'ELEVATION':dgm,'SLOPE':'TEMPORARY_OUTPUT','ASPECT':'TEMPORARY_OUTPUT','C_GENE':'TEMPORARY_OUTPUT','C_PROF':'TEMPORARY_OUTPUT','C_PLAN':'TEMPORARY_OUTPUT','C_TANG':'TEMPORARY_OUTPUT','C_LONG':'TEMPORARY_OUTPUT','C_CROS':'TEMPORARY_OUTPUT','C_MINI':'TEMPORARY_OUTPUT','C_MAXI':'TEMPORARY_OUTPUT','C_TOTA':'TEMPORARY_OUTPUT','C_ROTO':'TEMPORARY_OUTPUT','METHOD':6,'UNIT_SLOPE':1,'UNIT_ASPECT':1})
-        twi = processing.run("grass7:r.topidx", {'input':dgm,'output':'TEMPORARY_OUTPUT','GRASS_REGION_PARAMETER':None,'GRASS_REGION_CELLSIZE_PARAMETER':0,'GRASS_RASTER_FORMAT_OPT':'','GRASS_RASTER_FORMAT_META':''})
-
+        twi = processing.run("saga:topographicwetnessindextwi", {'SLOPE':slopeaspectcurvature['SLOPE'],'AREA':dgm,'TRANS':None,'TWI':'TEMPORARY_OUTPUT','CONV':0,'METHOD':0})
+        spi = processing.run("saga:streampowerindex", {'SLOPE':slopeaspectcurvature['SLOPE'],'AREA':dgm,'SPI':'TEMPORARY_OUTPUT','CONV':0})
         
         #reclassification
-        twi_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':twi['output'],'RASTER_BAND':1,'TABLE':['2','7','0','7','12','1','12','17','2','17','23','3'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
-        slope_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':slopeaspectcurvature['SLOPE'],'RASTER_BAND':1,'TABLE':['0','10','0','10','20','1','20','30','2','30','40','3','40','50','4','50','61','6'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
+        twi_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':twi['TWI'],'RASTER_BAND':1,'TABLE':['','-7','0','-7','0','1','0','7','2','7','','3'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
+        spi_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':spi['SPI'],'RASTER_BAND':1,'TABLE':['','250','0','250','500','1','500','750','2','750','1000','3','1000','','4'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
+        slope_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':slopeaspectcurvature['SLOPE'],'RASTER_BAND':1,'TABLE':['','10','0','10','20','1','20','30','2','30','40','3','40','50','4','50','','6'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
         aspect_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':slopeaspectcurvature['ASPECT'],'RASTER_BAND':1,'TABLE':['0','45','0','45','90','1','90','135','2','135','180','3','180','225','4','225','270','5','270','315','6','315','360','7'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
-        c_plan_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':slopeaspectcurvature['C_PLAN'],'RASTER_BAND':1,'TABLE':['-20','0','0','0','135','1'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
-        c_prof_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':slopeaspectcurvature['C_PROF'],'RASTER_BAND':1,'TABLE':['-1','0','0','0','1','1'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
-        roads_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':roads_distance['OUTPUT'],'RASTER_BAND':1,'TABLE':['0','30','0','30','60','1','60','90','2','90','3000','3'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
-        dgm_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':dgm,'RASTER_BAND':1,'TABLE':['-1','500','0','500','1000','1','1000','1500','2','1500','2000','3','2000','2700','4'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
+        c_plan_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':slopeaspectcurvature['C_PLAN'],'RASTER_BAND':1,'TABLE':['','0','0','0','','1'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
+        c_prof_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':slopeaspectcurvature['C_PROF'],'RASTER_BAND':1,'TABLE':['','0','0','0','','1'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
+        roads_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':roads_distance['OUTPUT'],'RASTER_BAND':1,'TABLE':['','30','0','30','60','1','60','90','2','90','','3'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
+        dgm_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':dgm,'RASTER_BAND':1,'TABLE':['','500','0','500','1000','1','1000','1500','2','1500','2000','3','2000','','4'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
         
-        raster_clip_list = [dgm_classified['OUTPUT'],parameters['precipation'],parameters['soil'],parameters['landuse'],parameters['lithosphere'],roads_classified['OUTPUT'],twi_classified['OUTPUT'],slope_classified['OUTPUT'],aspect_classified['OUTPUT'],c_plan_classified['OUTPUT'],c_prof_classified['OUTPUT']]
-        raster_names = ['dgm','precip','soil','landuse','lithosphere','roads','twi','slope','aspect','plan_curvature','profile_curvature']
+        raster_clip_list = [dgm_classified['OUTPUT'],parameters['precipation'],parameters['soil'],parameters['landuse'],parameters['lithosphere'],parameters['waterbodies'],roads_classified['OUTPUT'],twi_classified['OUTPUT'],spi_classified['OUTPUT'],slope_classified['OUTPUT'],aspect_classified['OUTPUT'],c_plan_classified['OUTPUT'],c_prof_classified['OUTPUT']]
+        raster_names = ['dgm','precip','soil','landuse','lithosphere','waterbodies','roads','twi','spi','slope','aspect','plan_curvature','profile_curvature']
         viewshed_raster_list = []
         
+        i = 0
         #clip all rasters to viewshed
         for raster in raster_clip_list:
+            processing.run("native:rasterlayeruniquevaluesreport", {'INPUT':raster,'BAND':1,'OUTPUT_HTML_FILE':'TEMPORARY_OUTPUT','OUTPUT_TABLE':raster_names[i]+'_unique_values.csv'})
             clip_result = processing.run("gdal:cliprasterbymasklayer", {'INPUT':raster,'MASK':viewshed_multipolygon['OUTPUT'],'SOURCE_CRS':None,'TARGET_CRS':None,'TARGET_EXTENT':None,'NODATA':None,'ALPHA_BAND':False,'CROP_TO_CUTLINE':True,'KEEP_RESOLUTION':False,'SET_RESOLUTION':False,'X_RESOLUTION':None,'Y_RESOLUTION':None,'MULTITHREADING':False,'OPTIONS':'','DATA_TYPE':0,'EXTRA':'','OUTPUT':'TEMPORARY_OUTPUT'})
             viewshed_raster_list.append(clip_result['OUTPUT'])
-            
+            i += 1
         
         
         processing.run("native:rasterlayerzonalstats", {'INPUT':parameters['landslides'],'BAND':1,'ZONES':parameters['landslides'],'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE':'landslides_pixel.csv'})
@@ -283,7 +286,8 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
             processing.run("native:rasterlayerzonalstats", {'INPUT':raster,'BAND':1,'ZONES':raster,'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE': raster_names[i]+'_class_pixel.csv'})
             pixel_zonal = zonal_statistics_as_dic_from_csv(raster_names[i]+'_zonal.csv')
             class_values = zonal_statistics_as_dic_from_csv(raster_names[i]+'_class_pixel.csv')
-            reclass_table = create_statistical_index_list(pixel_zonal,class_values,pixel_landslide_count)
+            unique_values = unique_values_from_csv(raster_names[i]+'_unique_values.csv')
+            reclass_table = create_statistical_index_list(pixel_zonal,class_values,pixel_landslide_count,unique_values)
             print(reclass_table)
             i += 1
             
@@ -305,6 +309,17 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         
         
 
+def unique_values_from_csv(file):
+     with open(file) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        i = 0
+        list = []
+        for row in csv_reader:
+            if i != 0:
+                list.append(str(int(float(row[0]))))
+            i += 1
+        return list
+
 def zonal_statistics_as_dic_from_csv(file):
     with open(file) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -316,19 +331,25 @@ def zonal_statistics_as_dic_from_csv(file):
             i += 1
         return dic
         
-def create_statistical_index_list(pixel_landslides_per_class,pixel_per_class,pixel_landslide_count):
+def create_statistical_index_list(pixel_landslides_per_class,pixel_per_class,pixel_landslide_count,unique_values):
     list = []
-    for key in pixel_per_class:
+    for key in unique_values:
         if key in pixel_landslides_per_class:
             list.append(key)
             list.append(key)
             si = np.log((pixel_landslides_per_class.get(key)/pixel_per_class.get(key))/(pixel_landslide_count/sum(pixel_per_class.values())))
             list.append(str(si))
         else: 
-            list.append(key)
-            list.append(key)
-            si = np.log((0.001/pixel_per_class.get(key))/(pixel_landslide_count/sum(pixel_per_class.values())))
-            list.append(str(si))
+            if key in pixel_per_class:
+                list.append(key)
+                list.append(key)
+                si = np.log((0.001/pixel_per_class.get(key))/(pixel_landslide_count/sum(pixel_per_class.values())))
+                list.append(str(si))
+            else: 
+                list.append(key)
+                list.append(key)
+                si = 0
+                list.append(str(si))
     return list
     
     
