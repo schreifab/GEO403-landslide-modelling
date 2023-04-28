@@ -74,14 +74,14 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'landslide_1'
+        return 'landslides_weight_factor'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('landslide_1')
+        return self.tr('landslides_weight_factor')
 
     def group(self):
         """
@@ -98,7 +98,7 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'examplescripts'
+        return 'geo403'
 
     def shortHelpString(self):
         """
@@ -106,17 +106,14 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         should provide a basic description about what the algorithm does and the
         parameters and outputs associated with it..
         """
-        return self.tr("Example algorithm short description")
+        return self.tr("This algorithm generates a landslide risk map for a study area using the weight factor method. For more information look at https://github.com/schreifab/GEO403-landslide-modelling .")
 
     def initAlgorithm(self, config=None):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
-        #author: Fabian Schreiter
-        
-        #We add the input vector features source. It can have any kind of
-        #geometry.
+
         
         self.addParameter(
             QgsProcessingParameterRasterLayer(
@@ -208,25 +205,15 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         """
         Here is where the processing itself takes place.
         """
-        #slope_file = "slope.tif"
+
         map_layers = QgsProject.instance().mapLayers()
         
         
-        # entries = []
-        
-        # viewshed_layer = map_layers[(parameters["viewshed"])]
-        # band = viewshed_layer.bandName(1)[8:]+'@1'
-        # print(band)
+
         os.chdir(parameters["output"])
         QgsApplication.setPrefixPath((parameters["output"]), True) 
         QgsApplication.initQgis()
-        # ras = QgsRasterCalculatorEntry()
-        # ras.ref = band
-        # ras.raster = viewshed_layer
-        # ras.bandNumber = 1
-        # entries.append(ras)
-        # calc = QgsRasterCalculator(band + '>= 1', 'viewshed_new.tif', 'GTiff', viewshed_layer.extent(), viewshed_layer.width(), viewshed_layer.height(), entries)
-        
+       
         if not os.path.exists('si_value_data'):
             os.makedirs('si_value_data')
         
@@ -238,14 +225,14 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         
         viewshed_layer = QgsVectorLayer(viewshed_polygons['OUTPUT'])
         with edit(viewshed_layer):
-            # build a request to filter the features based on an attribute
+            
             request = QgsFeatureRequest().setFilterExpression('"DN" = 0')
 
 
             request.setSubsetOfAttributes([])
             request.setFlags(QgsFeatureRequest.NoGeometry)
 
-            # loop over the features and delete
+
             for f in viewshed_layer.getFeatures(request):
                 viewshed_layer.deleteFeature(f.id())
         
@@ -262,13 +249,13 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         extent_list[1],extent_list[2] = extent_list[2],extent_list[1]
         extent_4_gdal = ','.join(extent_list)
         extent = extent_4_gdal +' ['+raster_properties['CRS_AUTHID']+']'
-        print(extent)
+
         
         slopeaspectcurvature = processing.run("saga:slopeaspectcurvature", {'ELEVATION':dgm,'SLOPE':'TEMPORARY_OUTPUT','ASPECT':'TEMPORARY_OUTPUT','C_GENE':'TEMPORARY_OUTPUT','C_PROF':'TEMPORARY_OUTPUT','C_PLAN':'TEMPORARY_OUTPUT','C_TANG':'TEMPORARY_OUTPUT','C_LONG':'TEMPORARY_OUTPUT','C_CROS':'TEMPORARY_OUTPUT','C_MINI':'TEMPORARY_OUTPUT','C_MAXI':'TEMPORARY_OUTPUT','C_TOTA':'TEMPORARY_OUTPUT','C_ROTO':'TEMPORARY_OUTPUT','METHOD':6,'UNIT_SLOPE':1,'UNIT_ASPECT':1})
         twi = processing.run("saga:topographicwetnessindextwi", {'SLOPE':slopeaspectcurvature['SLOPE'],'AREA':dgm,'TRANS':None,'TWI':'TEMPORARY_OUTPUT','CONV':0,'METHOD':0})
         spi = processing.run("saga:streampowerindex", {'SLOPE':slopeaspectcurvature['SLOPE'],'AREA':dgm,'SPI':'TEMPORARY_OUTPUT','CONV':0})
         
-        #reclassification
+
         twi_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':twi['TWI'],'RASTER_BAND':1,'TABLE':['','-7','0','-7','0','1','0','7','2','7','','3'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
         spi_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':spi['SPI'],'RASTER_BAND':1,'TABLE':['','250','0','250','500','1','500','750','2','750','1000','3','1000','','4'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
         slope_classified = processing.run("native:reclassifybytable", {'INPUT_RASTER':slopeaspectcurvature['SLOPE'],'RASTER_BAND':1,'TABLE':['','10','0','10','20','1','20','30','2','30','40','3','40','50','4','50','','6'],'NO_DATA':-9999,'RANGE_BOUNDARIES':0,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
@@ -283,7 +270,7 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         viewshed_raster_list = []
         
         i = 0
-        #clip all rasters to viewshed
+
         for raster in raster_clip_list:
             processing.run("native:rasterlayeruniquevaluesreport", {'INPUT':raster,'BAND':1,'OUTPUT_HTML_FILE':'TEMPORARY_OUTPUT','OUTPUT_TABLE':raster_names[i]+'_unique_values.csv'})
             clip_result = processing.run("gdal:cliprasterbymasklayer", {'INPUT':raster,'MASK':viewshed_multipolygon['OUTPUT'],'SOURCE_CRS':None,'TARGET_CRS':None,'TARGET_EXTENT':None,'NODATA':None,'ALPHA_BAND':False,'CROP_TO_CUTLINE':True,'KEEP_RESOLUTION':False,'SET_RESOLUTION':False,'X_RESOLUTION':None,'Y_RESOLUTION':None,'MULTITHREADING':False,'OPTIONS':'','DATA_TYPE':0,'EXTRA':'','OUTPUT':'TEMPORARY_OUTPUT'})
@@ -304,11 +291,10 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
             unique_values = unique_values_from_csv(raster_names[i]+'_unique_values.csv')
             reclass_table = create_statistical_index_list(pixel_zonal,class_values,pixel_landslide_count,unique_values)
             
-            print (raster_names[i])
-            print (reclass_table)
+
             
             tsi_list = []
-            # write si values to file
+
             with open (raster_names[i]+'_si.txt', 'w', encoding='utf8') as f:
                 i2 = 0
                 for value in reclass_table:
@@ -327,23 +313,18 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
             with open (raster_names[i]+'_si.txt', 'a', encoding='utf8') as f:
                 f.write('WF: '+str(wf))
             
-            print(wf)
-            print(reclass_table)
+
             i2 = 2
             while (i2 <= len(reclass_table)-1):
                 si = float(reclass_table[i2])
                 si *= wf
                 reclass_table[i2] = str(si)
                 i2 += 3
-            print(reclass_table)
+
             
             
             si_raster = processing.run("native:reclassifybytable", {'INPUT_RASTER':raster_clip_list[i],'RASTER_BAND':1,'TABLE':reclass_table,'NO_DATA':-9999,'RANGE_BOUNDARIES':2,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
-            #if (raster_names[i] == 'landuse'):
-               # print(reclass_table)
-                #lu_layer = QgsRasterLayer(si_raster['OUTPUT'],"lu_reclass")
-               #QgsProject.instance().addMapLayer(lu_layer)
-            #warp all rasters to same extent(of dgm) for raster band calculation
+
             si_raster_warped = processing.run("gdal:warpreproject", {'INPUT':si_raster['OUTPUT'],'SOURCE_CRS':None,'TARGET_CRS':None,'RESAMPLING':0,'NODATA':None,'TARGET_RESOLUTION':None,'OPTIONS':'','DATA_TYPE':0,'TARGET_EXTENT':extent,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'EXTRA':'','OUTPUT':'si_value_data/si_values_'+raster_names[i]+'.tif'})
             statistical_index_raster_list.append(si_raster_warped['OUTPUT'])
             
@@ -356,22 +337,12 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         si_sum_raster = statistical_index_raster_list[0]
         while (i <= len(statistical_index_raster_list)-1):
             si_sum_raster = processing.run("gdal:rastercalculator", {'INPUT_A':si_sum_raster,'BAND_A':1,'INPUT_B':statistical_index_raster_list[i],'BAND_B':None,'INPUT_C':None,'BAND_C':None,'INPUT_D':None,'BAND_D':None,'INPUT_E':None,'BAND_E':None,'INPUT_F':None,'BAND_F':None,'FORMULA':'A + B','NO_DATA':None,'PROJWIN':None,'RTYPE':5,'OPTIONS':'','EXTRA':'','OUTPUT':'si_raster_addition/landslides_risk_si_'+str(i)+'.tif'})['OUTPUT']            #if i >= 2:
-                #os.remove('landlides_risk_si_'+str(i-1)+'.tif')
+
             i += 1
             
         result_layer = QgsRasterLayer(si_sum_raster,"landslide_risk_map")
         QgsProject.instance().addMapLayer(result_layer)
         
-        #result_slope = processing.run("gdal:slope",{'BAND': 1, 'INPUT': parameters["dgm"],'SCALE':1,'OUTPUT': 'TEMPORARY_OUTPUT'},
-            #context=context, feedback=feedback, is_child_algorithm=True)
-            
-        
-        
-        
-        #slope_layer = QgsRasterLayer(slope_file,"slope")
-        #QgsProject.instance().addMapLayer(slope_layer)
-        #print(slope_layer)
-        #return {self.OUTPUT: result_slope}
         
         return{}
         
