@@ -388,7 +388,7 @@ def create_statistical_index_list(pixel_landslides_per_class,pixel_per_class,pix
             if key in pixel_per_class:
                 list.append(key)
                 list.append(key)
-                si = np.log((0.001/pixel_per_class.get(key))/(pixel_landslide_count/sum(pixel_per_class.values())))
+                si = np.log((0.1/pixel_per_class.get(key))/(pixel_landslide_count/sum(pixel_per_class.values())))
                 list.append(str(si))
             else: 
                 list.append(key)
