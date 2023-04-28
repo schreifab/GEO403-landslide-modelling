@@ -227,6 +227,12 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         # entries.append(ras)
         # calc = QgsRasterCalculator(band + '>= 1', 'viewshed_new.tif', 'GTiff', viewshed_layer.extent(), viewshed_layer.width(), viewshed_layer.height(), entries)
         
+        if not os.path.exists('si_value_data'):
+            os.makedirs('si_value_data')
+        
+        if not os.path.exists('si_raster_addition'):
+            os.makedirs('si_raster_addition')
+        
         viewshed_raster = processing.run("gdal:rastercalculator", {'INPUT_A':parameters["viewshed"],'BAND_A':1,'INPUT_B':None,'BAND_B':None,'INPUT_C':None,'BAND_C':None,'INPUT_D':None,'BAND_D':None,'INPUT_E':None,'BAND_E':None,'INPUT_F':None,'BAND_F':None,'FORMULA':'A >= 1','NO_DATA':None,'PROJWIN':None,'RTYPE':5,'OPTIONS':'','EXTRA':'','OUTPUT':'TEMPORARY_OUTPUT'})
         viewshed_polygons = processing.run("gdal:polygonize", {'INPUT':viewshed_raster['OUTPUT'],'BAND':1,'FIELD':'DN','EIGHT_CONNECTEDNESS':False,'EXTRA':'','OUTPUT':'TEMPORARY_OUTPUT'})
         
@@ -250,6 +256,14 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         roads_distance = processing.run("gdal:proximity", {'INPUT':roads_raster['OUTPUT'],'BAND':1,'VALUES':'','UNITS':0,'MAX_DISTANCE':0,'REPLACE':0,'NODATA':0,'OPTIONS':'','EXTRA':'','DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
 
         dgm = parameters['dgm']
+        raster_properties = processing.run("native:rasterlayerproperties", {'INPUT':dgm,'BAND':1})
+        extent_from_qgis = raster_properties['EXTENT'].replace(' : ',',')
+        extent_list = extent_from_qgis.split(',')
+        extent_list[1],extent_list[2] = extent_list[2],extent_list[1]
+        extent_4_gdal = ','.join(extent_list)
+        extent = extent_4_gdal +' ['+raster_properties['CRS_AUTHID']+']'
+        print(extent)
+        
         slopeaspectcurvature = processing.run("saga:slopeaspectcurvature", {'ELEVATION':dgm,'SLOPE':'TEMPORARY_OUTPUT','ASPECT':'TEMPORARY_OUTPUT','C_GENE':'TEMPORARY_OUTPUT','C_PROF':'TEMPORARY_OUTPUT','C_PLAN':'TEMPORARY_OUTPUT','C_TANG':'TEMPORARY_OUTPUT','C_LONG':'TEMPORARY_OUTPUT','C_CROS':'TEMPORARY_OUTPUT','C_MINI':'TEMPORARY_OUTPUT','C_MAXI':'TEMPORARY_OUTPUT','C_TOTA':'TEMPORARY_OUTPUT','C_ROTO':'TEMPORARY_OUTPUT','METHOD':6,'UNIT_SLOPE':1,'UNIT_ASPECT':1})
         twi = processing.run("saga:topographicwetnessindextwi", {'SLOPE':slopeaspectcurvature['SLOPE'],'AREA':dgm,'TRANS':None,'TWI':'TEMPORARY_OUTPUT','CONV':0,'METHOD':0})
         spi = processing.run("saga:streampowerindex", {'SLOPE':slopeaspectcurvature['SLOPE'],'AREA':dgm,'SPI':'TEMPORARY_OUTPUT','CONV':0})
@@ -281,6 +295,7 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         pixel_landslide_count = zonal_statistics_as_dic_from_csv('landslides_pixel.csv').get('1')
         
         i = 0
+        statistical_index_raster_list = []
         for raster in viewshed_raster_list:
             processing.run("native:rasterlayerzonalstats", {'INPUT':parameters['landslides'],'BAND':1,'ZONES':raster,'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE': raster_names[i]+'_zonal.csv'})
             processing.run("native:rasterlayerzonalstats", {'INPUT':raster,'BAND':1,'ZONES':raster,'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE': raster_names[i]+'_class_pixel.csv'})
@@ -288,11 +303,41 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
             class_values = zonal_statistics_as_dic_from_csv(raster_names[i]+'_class_pixel.csv')
             unique_values = unique_values_from_csv(raster_names[i]+'_unique_values.csv')
             reclass_table = create_statistical_index_list(pixel_zonal,class_values,pixel_landslide_count,unique_values)
-            print(reclass_table)
+            
+            # write si values to file
+            with open (raster_names[i]+'_si.txt', 'w', encoding='utf8') as f:
+                i2 = 0
+                for value in reclass_table:
+                    if (i2 % 3 == 0):
+                        f.write(value + ': ')
+                    elif (i2 % 3 == 2):
+                        f.write(value + ', ')
+                    i2 += 1 
+
+            
+            si_raster = processing.run("native:reclassifybytable", {'INPUT_RASTER':raster_clip_list[i],'RASTER_BAND':1,'TABLE':reclass_table,'NO_DATA':-9999,'RANGE_BOUNDARIES':2,'NODATA_FOR_MISSING':False,'DATA_TYPE':5,'OUTPUT':'TEMPORARY_OUTPUT'})
+            #if (raster_names[i] == 'landuse'):
+               # print(reclass_table)
+                #lu_layer = QgsRasterLayer(si_raster['OUTPUT'],"lu_reclass")
+               #QgsProject.instance().addMapLayer(lu_layer)
+            #warp all rasters to same extent(of dgm) for raster band calculation
+            si_raster_warped = processing.run("gdal:warpreproject", {'INPUT':si_raster['OUTPUT'],'SOURCE_CRS':None,'TARGET_CRS':None,'RESAMPLING':0,'NODATA':None,'TARGET_RESOLUTION':None,'OPTIONS':'','DATA_TYPE':0,'TARGET_EXTENT':extent,'TARGET_EXTENT_CRS':None,'MULTITHREADING':False,'EXTRA':'','OUTPUT':'si_value_data/si_values_'+raster_names[i]+'.tif'})
+            statistical_index_raster_list.append(si_raster_warped['OUTPUT'])
+            
+            
             i += 1
             
         
-         
+
+        i = 1
+        si_sum_raster = statistical_index_raster_list[0]
+        while (i <= len(statistical_index_raster_list)-1):
+            si_sum_raster = processing.run("gdal:rastercalculator", {'INPUT_A':si_sum_raster,'BAND_A':1,'INPUT_B':statistical_index_raster_list[i],'BAND_B':None,'INPUT_C':None,'BAND_C':None,'INPUT_D':None,'BAND_D':None,'INPUT_E':None,'BAND_E':None,'INPUT_F':None,'BAND_F':None,'FORMULA':'A + B','NO_DATA':None,'PROJWIN':None,'RTYPE':5,'OPTIONS':'','EXTRA':'','OUTPUT':'si_raster_addition/landslides_risk_si_'+str(i)+'.tif'})['OUTPUT']            #if i >= 2:
+                #os.remove('landlides_risk_si_'+str(i-1)+'.tif')
+            i += 1
+            
+        result_layer = QgsRasterLayer(si_sum_raster,"landslide_risk_map")
+        QgsProject.instance().addMapLayer(result_layer)
         
         #result_slope = processing.run("gdal:slope",{'BAND': 1, 'INPUT': parameters["dgm"],'SCALE':1,'OUTPUT': 'TEMPORARY_OUTPUT'},
             #context=context, feedback=feedback, is_child_algorithm=True)
