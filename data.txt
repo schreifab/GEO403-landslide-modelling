@@ -1,0 +1,7 @@
+Additional data folder:
+https://drive.google.com/drive/folders/15PGI8bOZfjtkldvODAsm8j5vuQaRDHnS?usp=sharing
+
+dem: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?view=geodata&id=887
+lithosphere: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?
+soil: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?
+waterbodies: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?view=geodata&id=1474
