@@ -1,7 +1,7 @@
 # GEO403-landslide-modelling
 This GitHub-Repository contains QGIS-proccessing scripts for the calculation of landslide risk in a study area. 
 Therefore, the statistical index method and the weighting factor method can be used. 
-![Flow chart](flow_chart.pgn)
+![Flow chart](flow_chart.png)
 
 
 ## Requirements
