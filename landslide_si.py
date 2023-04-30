@@ -354,7 +354,7 @@ def unique_values_from_csv(file):
     '''
     Returns an array of the parameter classes for each raster
     '''
-     with open(file) as csv_file:
+    with open(file) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         i = 0
         list = []
