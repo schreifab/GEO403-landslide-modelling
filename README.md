@@ -23,7 +23,12 @@ landslides: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?view=geod
 landuse, roads,viewshed and
 precipation: via Google Drive in data.txt
 
-If you would like to use the algorithm for yur own study, make sure, that all rasters have the same EPSG and resolution. 
+For further information on the study area and methodology, it is recommended to read the following paper.
+Meinhardt, Fink, Tünschel (2015):
+Landslide susceptibility analysis in central Vietnam based on an incomplete landslide inventory: Comparison of a new method to calculate weighting factors by means of bivariate statistics,
+Geomorphology (234)
+
+If you would like to use the algorithm for your own study, make sure, that all rasters have the same EPSG and resolution. 
 
 ## Scripts
 
