@@ -283,6 +283,8 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         
         i = 0
         statistical_index_raster_list = []
+        reclass_table_list = []
+        tsi_list = []
         for raster in viewshed_raster_list:
             processing.run("native:rasterlayerzonalstats", {'INPUT':parameters['landslides'],'BAND':1,'ZONES':raster,'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE': raster_names[i]+'_zonal.csv'})
             processing.run("native:rasterlayerzonalstats", {'INPUT':raster,'BAND':1,'ZONES':raster,'ZONES_BAND':1,'REF_LAYER':0,'OUTPUT_TABLE': raster_names[i]+'_class_pixel.csv'})
@@ -293,7 +295,7 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
             
 
             
-            tsi_list = []
+            tsi_parts = []
 
             with open (raster_names[i]+'_si.txt', 'w', encoding='utf8') as f:
                 i2 = 0
@@ -306,10 +308,20 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
                             ls_zonal = 0
                     elif (i2 % 3 == 2):
                         f.write(value + ', ')
-                        tsi_list.append(float(value)*ls_zonal)
+                        tsi_parts.append(float(value)*ls_zonal)
                     i2 += 1 
             
-            wf = ((sum(tsi_list)-min(tsi_list))/(max(tsi_list)-min(tsi_list)))*9+1
+            tsi = sum(tsi_parts)
+            tsi_list.append(tsi)
+            reclass_table_list.append(reclass_table)
+            i += 1
+        
+        i = 0
+        
+        
+        for raster in viewshed_raster_list:
+            wf = ((tsi_list[i]-min(tsi_list))/(max(tsi_list)-min(tsi_list)))*9+1
+            reclass_table = reclass_table_list[i]
             with open (raster_names[i]+'_si.txt', 'a', encoding='utf8') as f:
                 f.write('WF: '+str(wf))
             
