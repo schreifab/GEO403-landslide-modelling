@@ -20,10 +20,8 @@ lithosphere: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?
 soil: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?
 waterbodies: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?view=geodata&id=1474
 landslides: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?view=geodata&id=1484&ident=704463531728833920
-landuse: data-folder
-roads: data-folder
-viewshed: data-folder
-precipation: data-folder
+landuse, roads,viewshed and
+precipation: via Google Drive in data.txt
 
 If you would like to use the algorithm for yur own study, make sure, that all rasters have the same EPSG and resolution. 
 
