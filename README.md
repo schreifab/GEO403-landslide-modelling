@@ -1,6 +1,7 @@
 # GEO403-landslide-modelling
 This GitHub-Repository contains QGIS-proccessing scripts for the calculation of landslide risk in a study area. 
 Therefore, the statistical index method and the weighting factor method can be used. 
+The 
 ![Flow chart](flow_chart.png)
 
 
@@ -28,7 +29,7 @@ If you would like to use the algorithm for yur own study, make sure, that all ra
 ## Scripts
 
 ### landslides_si.py
-This script calculates a landslide risk map using the statistical index method.
+This script calculates a landslide risk map using the statistical index method. The result is added to QGIS as layer. 
 
 ### landslides_wf.py
 This script calculates a landslide risk map using the Weighting Factor method.
@@ -36,4 +37,6 @@ NOTE: There are no comments in the script, because it is just an adjusted Versio
 For detailed information take a look at landslides_si.py
 
 ### landslides_roc.py
-This script can be used to validate the results. Therefore ROC is calculated. 
+This script can be used to validate the results. Therefore ROC is calculated and written to roc.txt in the output folder. 
+
+
