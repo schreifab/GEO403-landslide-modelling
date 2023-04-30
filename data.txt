@@ -5,3 +5,4 @@ dem: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?view=geodata&id=
 lithosphere: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?
 soil: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?
 waterbodies: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?view=geodata&id=1474
+landslides: http://leutra.geogr.uni-jena.de/vgtbRBIS/metadata/view.php?view=geodata&id=1484&ident=704463531728833920
